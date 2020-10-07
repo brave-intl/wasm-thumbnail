@@ -2,6 +2,7 @@
 
 import time
 from PIL import Image
+import struct
 
 from wasmer import engine, Store, Module, Instance
 from wasmer_compiler_cranelift import Compiler
@@ -9,6 +10,20 @@ from wasmer_compiler_cranelift import Compiler
 path = 'wasm_thumbnail.wasm'
 store = Store(engine.JIT(Compiler))
 module = Module(store, open(path, 'rb').read())
+
+def decode(data):
+    """Extract a payload from its padding by reading its length header."""
+    data_length_without_header = len(data) - 4
+    if data_length_without_header < 0:
+        raise ValueError('Data must be at least 4 bytes long', len(data))
+
+    payload_length = struct.unpack('!L', data[0:4])[0]
+
+    if data_length_without_header < payload_length:
+        raise ValueError('Payload is shorter than the expected length',
+                         data_length_without_header, payload_length)
+
+    return data[4:4 + payload_length]
 
 def resize_and_pad_image(image_bytes, width, height, size):
     instance = Instance(module)
@@ -23,14 +38,14 @@ def resize_and_pad_image(image_bytes, width, height, size):
     memory = instance.exports.memory.uint8_view(output_pointer)
     out_bytes = bytes(memory[:size])
 
-    return out_bytes
+    return decode(out_bytes)
 
 with open('brave.png', 'rb') as image:
     image_bytes = image.read()
 
     tic = time.perf_counter()
 
-    out_bytes = resize_and_pad_image(image_bytes, 100, 100, 250000)
+    out_bytes = resize_and_pad_image(image_bytes, 500, 500, 250000)
     with open('out.jpg', 'wb+') as out_image:
         out_image.write(out_bytes)
 
