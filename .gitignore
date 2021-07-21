@@ -8,4 +8,5 @@
 
 # Project specific ignores
 target
-out.jpg
+__pycache__
+*.pyc
