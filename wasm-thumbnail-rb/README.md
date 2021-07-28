@@ -1,28 +1,22 @@
 # Wasm::Thumbnail::Rb
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/wasm/thumbnail/rb`. To experiment with that code, run `bin/console` for an interactive prompt.
-
-TODO: Delete this and the text above, and describe your gem
-
 ## Installation
+
+Note this gem has not been released to rubygems. It may in the future but for now it is intended to be referenced via git.
 
 Add this line to your application's Gemfile:
 
 ```ruby
-gem 'wasm-thumbnail-rb'
+gem 'wasm-thumbnail-rb', git: 'gitlocationofgem'
 ```
 
 And then execute:
 
     $ bundle install
 
-Or install it yourself as:
-
-    $ gem install wasm-thumbnail-rb
-
 ## Usage
 
-TODO: Write usage instructions here
+See `rb_test.rb` for an example of usage.
 
 ## Development
 
