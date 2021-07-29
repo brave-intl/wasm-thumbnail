@@ -60,17 +60,12 @@ module Wasm
         memory = wasm_instance.exports.memory.uint8_view output_pointer
 
         # Only take the buffer that we told the rust function we needed. The resize function
-        # makes a smaller image than the buffer we said, and then pads out the rest so we have to
-        # go hunting for the bytes which represent the JPEG image. In hex, JPEG images start with
-        # FFD8 and FFD9, so we can convert to hex and find the bounds of the image, then write to file
+        # makes a smaller image than the buffer we said, and then pads out the rest.
         bytes = memory.to_a.take(size)
 
         # Deallocate
         wasm_instance.exports.deallocate.call(input_pointer, image_length)
         wasm_instance.exports.deallocate.call(output_pointer, bytes.length)
-
-        # The bytes passed back to us are ASCII-encoded, i.e. 8bit bytes. Interpret them as so,
-        # and THEN convert to hex to search for the image bytes
 
         # The first 4 bytes are a header until the image. The actual image probably ends well before
         # the whole buffer, but we keep the junk data on the end to make all the images the same size
