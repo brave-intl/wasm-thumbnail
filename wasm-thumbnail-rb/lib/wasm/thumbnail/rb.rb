@@ -29,7 +29,7 @@ module Wasm
         )
       )
 
-      def self.resize_and_pad(file_bytes:, width:, height:, size:)
+      def self.resize_and_pad_with_header(file_bytes:, width:, height:, size:)
         # Let's compile the module to be able to execute it!
         wasm_instance = Wasm::Thumbnail::Rb::GetWasmInstance.call
 
@@ -66,6 +66,12 @@ module Wasm
         # Deallocate
         wasm_instance.exports.deallocate.call(input_pointer, image_length)
         wasm_instance.exports.deallocate.call(output_pointer, bytes.length)
+
+        bytes
+      end
+
+      def self.resize_and_pad(file_bytes:, width:, height:, size:)
+        bytes = resize_and_pad_with_header(file_bytes: file_bytes, width: width, height: height, size: size)
 
         # The first 4 bytes are a header until the image. The actual image probably ends well before
         # the whole buffer, but we keep the junk data on the end to make all the images the same size
