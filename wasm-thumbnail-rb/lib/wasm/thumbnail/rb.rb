@@ -71,7 +71,7 @@ module Wasm
       end
 
       def self.resize_and_pad(file_bytes:, width:, height:, size:)
-        bytes = resize_and_pad_with_header(file_bytes: file_bytes, width: width, height: height, size: size)
+        bytes = resize_and_pad_with_header(file_bytes: file_bytes, width: width, height: height, size: size + 4)
 
         # The first 4 bytes are a header until the image. The actual image probably ends well before
         # the whole buffer, but we keep the junk data on the end to make all the images the same size
