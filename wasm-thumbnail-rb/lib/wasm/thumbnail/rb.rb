@@ -13,22 +13,6 @@ module Wasm
         puts("WASM panicked")
       end
 
-      WASMStore = Wasmer::Store.new
-      WASMImportObject = Wasmer::ImportObject.new
-      WASMImportObject.register(
-        "env",
-        register_panic: Wasmer::Function.new(
-          WASMStore,
-          :register_panic,
-          Wasmer::FunctionType.new([Wasmer::Type::I32,
-                                    Wasmer::Type::I32,
-                                    Wasmer::Type::I32,
-                                    Wasmer::Type::I32,
-                                    Wasmer::Type::I32,
-                                    Wasmer::Type::I32], [])
-        )
-      )
-
       def self.resize_and_pad_with_header(file_bytes:, width:, height:, size:)
         # Let's compile the module to be able to execute it!
         wasm_instance = Wasm::Thumbnail::Rb::GetWasmInstance.call
@@ -82,10 +66,26 @@ module Wasm
       # Return an instance so you don't have to constantly compile
       class GetWasmInstance
         def self.call
+          store = Wasmer::Store.new
+          import_object = Wasmer::ImportObject.new
+          import_object.register(
+            "env",
+            register_panic: Wasmer::Function.new(
+              store,
+              ->(*args) { Wasm::Thumbnail::Rb.register_panic(*args) },
+              Wasmer::FunctionType.new([Wasmer::Type::I32,
+                                        Wasmer::Type::I32,
+                                        Wasmer::Type::I32,
+                                        Wasmer::Type::I32,
+                                        Wasmer::Type::I32,
+                                        Wasmer::Type::I32], [])
+            )
+          )
+
           # Let's compile the module to be able to execute it!
           Wasmer::Instance.new(
-            Wasmer::Module.new(WASMStore, IO.read("#{__dir__}/rb/data/wasm_thumbnail.wasm", mode: "rb")),
-            WASMImportObject
+            Wasmer::Module.new(store, IO.read("#{__dir__}/rb/data/wasm_thumbnail.wasm", mode: "rb")),
+            import_object
           )
         end
       end

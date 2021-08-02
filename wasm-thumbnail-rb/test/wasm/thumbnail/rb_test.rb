@@ -15,4 +15,15 @@ class Wasm::Thumbnail::RbTest < Minitest::Test
                                                size: 250_000)
     puts "Image resized and padded to size #{image.length}"
   end
+
+  def test_it_calls_panic_if_image_too_big
+    file_bytes = File.binread("#{__dir__}/brave.png").unpack("C*")
+    exception = assert_raises RuntimeError do
+      Wasm::Thumbnail::Rb.resize_and_pad(file_bytes: file_bytes,
+                                         width: 100,
+                                         height: 200,
+                                         size: 5)
+    end
+    assert_equal(exception.message, "Error processing the image.")
+  end
 end
