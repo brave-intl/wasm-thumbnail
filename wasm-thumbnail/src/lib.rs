@@ -21,6 +21,7 @@ pub extern "C" fn resize_and_pad(
     nwidth: u32,
     nheight: u32,
     nsize: usize,
+    nquality: u8
 ) -> *const u8 {
     register_panic_hook();
 
@@ -43,7 +44,7 @@ pub extern "C" fn resize_and_pad(
     out.extend_from_slice(&[0, 0, 0, 0]);
 
     result
-        .write_to(&mut out, ImageOutputFormat::Jpeg(80))
+        .write_to(&mut out, ImageOutputFormat::Jpeg(nquality))
         .expect("can save as jpeg");
 
     assert!(out.len() <= nsize);

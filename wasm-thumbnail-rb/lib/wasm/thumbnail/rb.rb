@@ -13,7 +13,7 @@ module Wasm
         puts("WASM panicked")
       end
 
-      def self.resize_and_pad_with_header(file_bytes:, width:, height:, size:)
+      def self.resize_and_pad_with_header(file_bytes:, width:, height:, size:, quality: 80)
         # Let's compile the module to be able to execute it!
         wasm_instance = Wasm::Thumbnail::Rb::GetWasmInstance.call
 
@@ -36,7 +36,8 @@ module Wasm
                                                                      image_length,
                                                                      width,
                                                                      height,
-                                                                     size)
+                                                                     size,
+                                                                     quality)
         rescue RuntimeError
           raise "Error processing the image."
         end
@@ -54,8 +55,12 @@ module Wasm
         bytes
       end
 
-      def self.resize_and_pad(file_bytes:, width:, height:, size:)
-        bytes = resize_and_pad_with_header(file_bytes: file_bytes, width: width, height: height, size: size + 4)
+      def self.resize_and_pad(file_bytes:, width:, height:, size:, quality: 80)
+        bytes = resize_and_pad_with_header(file_bytes: file_bytes,
+                                           width: width,
+                                           height: height,
+                                           size: size + 4,
+                                           quality: quality)
 
         # The first 4 bytes are a header until the image. The actual image probably ends well before
         # the whole buffer, but we keep the junk data on the end to make all the images the same size
