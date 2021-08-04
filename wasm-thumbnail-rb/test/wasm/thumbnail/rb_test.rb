@@ -7,7 +7,17 @@ class Wasm::Thumbnail::RbTest < Minitest::Test
     refute_nil ::Wasm::Thumbnail::Rb::VERSION
   end
 
-  def test_it_does_something_useful
+  def test_it_resizes_with_custom_quality
+    file_bytes = File.binread("#{__dir__}/brave.png").unpack("C*")
+    image = Wasm::Thumbnail::Rb.resize_and_pad(file_bytes: file_bytes,
+                                               width: 100,
+                                               height: 200,
+                                               size: 250_000,
+                                               quality: 40)
+    puts "Image resized and padded to size #{image.length}"
+  end
+
+  def test_it_resizes_with_default_quality
     file_bytes = File.binread("#{__dir__}/brave.png").unpack("C*")
     image = Wasm::Thumbnail::Rb.resize_and_pad(file_bytes: file_bytes,
                                                width: 100,

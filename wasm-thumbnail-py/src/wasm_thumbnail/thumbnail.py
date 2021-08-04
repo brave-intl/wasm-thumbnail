@@ -21,7 +21,7 @@ def decode_padded_image(data):
 
     return data[4:4 + payload_length]
 
-def resize_and_pad_image(image_bytes, width, height, size):
+def resize_and_pad_image(image_bytes, width, height, size, quality = 80):
     """Resize an image and pad to fit size, output is prefixed by image length without padding.
     Throws an error if the resized image does not fit in size or is not a supported format"""
     instance = Instance(module, import_object)
@@ -31,7 +31,7 @@ def resize_and_pad_image(image_bytes, width, height, size):
     memory = instance.exports.memory.uint8_view(input_pointer)
     memory[0:image_length] = image_bytes
 
-    output_pointer = instance.exports.resize_and_pad(input_pointer, image_length, width, height, size)
+    output_pointer = instance.exports.resize_and_pad(input_pointer, image_length, width, height, size, quality)
     instance.exports.deallocate(input_pointer, image_length)
 
     memory = instance.exports.memory.uint8_view(output_pointer)
