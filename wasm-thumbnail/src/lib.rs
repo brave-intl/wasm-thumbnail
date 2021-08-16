@@ -1,3 +1,4 @@
+use std::error::Error;
 use std::mem;
 use std::os::raw::c_void;
 
@@ -21,42 +22,51 @@ pub extern "C" fn resize_and_pad(
     nwidth: u32,
     nheight: u32,
     nsize: usize,
-    nquality: u8
+    nquality: u8,
 ) -> *const u8 {
     register_panic_hook();
 
     let slice: &[u8] = unsafe { std::slice::from_raw_parts(pointer, length) };
 
-    let img = image::load_from_memory(slice).expect("must be a valid image");
-
-    // Resize preserves aspect ratio
-    let img = img.resize(nwidth, nheight, FilterType::Lanczos3);
-
-    // Copy pixels only
-    let mut result = DynamicImage::new_rgba8(img.width(), img.height());
-    result
-        .copy_from(&img, 0, 0)
-        .expect("copy should not fail as output is same dimensions");
-
     let mut out: Vec<u8> = Vec::with_capacity(nsize);
-
     // Reserve space at the start for length header
     out.extend_from_slice(&[0, 0, 0, 0]);
 
-    result
-        .write_to(&mut out, ImageOutputFormat::Jpeg(nquality))
-        .expect("can save as jpeg");
-
-    assert!(out.len() <= nsize);
-
-    let thumbnail_len: u32 = out.len() as u32 - 4;
-    out.splice(..4, thumbnail_len.to_be_bytes().iter().cloned());
+    if let Ok(thumbnail_len) = _resize_and_pad(slice, &mut out, nwidth, nheight, nsize, nquality) {
+        out.splice(..4, thumbnail_len.to_be_bytes().iter().cloned());
+    }
 
     out.resize(nsize, 0);
 
     let pointer = out.as_mut_ptr();
     mem::forget(out);
     pointer
+}
+
+pub fn _resize_and_pad(
+    slice: &[u8],
+    out: &mut Vec<u8>,
+    nwidth: u32,
+    nheight: u32,
+    nsize: usize,
+    nquality: u8,
+) -> Result<u32, Box<dyn Error>> {
+    let img = image::load_from_memory(slice)?;
+
+    // Resize preserves aspect ratio
+    let img = img.resize(nwidth, nheight, FilterType::Lanczos3);
+
+    // Copy pixels only
+    let mut result = DynamicImage::new_rgba8(img.width(), img.height());
+    result.copy_from(&img, 0, 0)?;
+
+    result.write_to(out, ImageOutputFormat::Jpeg(nquality))?;
+
+    if out.len() > nsize {
+        return Err("size is too large".into());
+    }
+
+    Ok(out.len() as u32 - 4)
 }
 
 /// Allocate a new buffer in the wasm memory space

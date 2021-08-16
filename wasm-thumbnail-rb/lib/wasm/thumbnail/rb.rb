@@ -63,6 +63,10 @@ module Wasm
                                            height: height,
                                            size: size + 4,
                                            quality: quality)
+        len = bytes[..3].pack("cccc").unpack("N*")[0]
+        if len[0] == 0
+          raise "Error processing the image."
+        end
 
         # The first 4 bytes are a header until the image. The actual image probably ends well before
         # the whole buffer, but we keep the junk data on the end to make all the images the same size
