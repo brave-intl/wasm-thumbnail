@@ -39,6 +39,8 @@ module Wasm
                                                                      size,
                                                                      quality)
         rescue RuntimeError
+          # Deallocate
+          wasm_instance.exports.deallocate.call(input_pointer, image_length)
           raise "Error processing the image."
         end
         # Get a pointer to the result
@@ -50,7 +52,7 @@ module Wasm
 
         # Deallocate
         wasm_instance.exports.deallocate.call(input_pointer, image_length)
-        wasm_instance.exports.deallocate.call(output_pointer, bytes.length)
+        wasm_instance.exports.deallocate.call(output_pointer, size)
 
         bytes
       end
