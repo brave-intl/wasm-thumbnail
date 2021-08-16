@@ -38,10 +38,10 @@ module Wasm
                                                                      height,
                                                                      size,
                                                                      quality)
-        rescue RuntimeError
+        rescue RuntimeError => e
           # Deallocate
           wasm_instance.exports.deallocate.call(input_pointer, image_length)
-          raise "Error processing the image."
+          raise "Error processing the image: #{e.message}"
         end
         # Get a pointer to the result
         memory = wasm_instance.exports.memory.uint8_view output_pointer
@@ -64,7 +64,7 @@ module Wasm
                                            size: size + 4,
                                            quality: quality)
         len = bytes[..3].pack("cccc").unpack("N*")[0]
-        if len[0] == 0
+        if len == 0
           raise "Error processing the image."
         end
 
