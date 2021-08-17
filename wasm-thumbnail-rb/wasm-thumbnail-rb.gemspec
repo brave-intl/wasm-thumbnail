@@ -25,4 +25,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_dependency "wasmer", "~> 1.0"
+
+  spec.add_development_dependency "pry"
+
 end

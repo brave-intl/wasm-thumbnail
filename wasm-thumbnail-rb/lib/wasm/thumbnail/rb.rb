@@ -14,55 +14,69 @@ module Wasm
       end
 
       def self.resize_and_pad_with_header(file_bytes:, width:, height:, size:, quality: 80)
-        # Let's compile the module to be able to execute it!
-        wasm_instance = Wasm::Thumbnail::Rb::GetWasmInstance.call
+        # Ruby does not garbage collect the wasm instance unless we run this in a thread
+        t = Thread.new do
+          Thread.current.abort_on_exception = true
 
-        # This tells us how much space we'll need to put our image in the WASM env
-        image_length = file_bytes.length
-        input_pointer = wasm_instance.exports.allocate.call(image_length)
-        # Get a pointer on the allocated memory so we can write to it
-        memory = wasm_instance.exports.memory.uint8_view input_pointer
+          # Let's compile the module to be able to execute it!
+          wasm_instance = Wasm::Thumbnail::Rb::GetWasmInstance.call
 
-        # Put the image to resize in the allocated space
-        (0..image_length - 1).each do |nth|
-          memory[nth] = file_bytes[nth]
-        end
+          # This tells us how much space we'll need to put our image in the WASM env
+          image_length = file_bytes.length
+          input_pointer = wasm_instance.exports.allocate.call(image_length)
+          # Get a pointer on the allocated memory so we can write to it
+          memory = wasm_instance.exports.memory.uint8_view input_pointer
 
-        # Do the actual resize and pad
-        # Note that this writes to a portion of memory the new JPEG file, but right pads the rest of the space
-        # we gave it with 0.
-        begin
-          output_pointer = wasm_instance.exports.resize_and_pad.call(input_pointer,
-                                                                     image_length,
-                                                                     width,
-                                                                     height,
-                                                                     size,
-                                                                     quality)
-        rescue RuntimeError
+          # Put the image to resize in the allocated space
+          (0..image_length - 1).each do |nth|
+            memory[nth] = file_bytes[nth]
+          end
+
+          # Do the actual resize and pad
+          # Note that this writes to a portion of memory the new JPEG file, but right pads the rest of the space
+          # we gave it with 0.
+          begin
+            output_pointer = wasm_instance.exports.resize_and_pad.call(input_pointer,
+                                                                      image_length,
+                                                                      width,
+                                                                      height,
+                                                                      size,
+                                                                      quality)
+          rescue RuntimeError => e
+            # Deallocate
+            wasm_instance.exports.deallocate.call(input_pointer, image_length)
+            raise "Error processing the image: #{e.message}"
+          end
+          # Get a pointer to the result
+          memory = wasm_instance.exports.memory.uint8_view output_pointer
+
+          # Only take the buffer that we told the rust function we needed. The resize function
+          # makes a smaller image than the buffer we said, and then pads out the rest.
+          bytes = memory.to_a.take(size)
+
           # Deallocate
           wasm_instance.exports.deallocate.call(input_pointer, image_length)
-          raise "Error processing the image."
+          wasm_instance.exports.deallocate.call(output_pointer, size)
+
+          bytes
         end
-        # Get a pointer to the result
-        memory = wasm_instance.exports.memory.uint8_view output_pointer
 
-        # Only take the buffer that we told the rust function we needed. The resize function
-        # makes a smaller image than the buffer we said, and then pads out the rest.
-        bytes = memory.to_a.take(size)
-
-        # Deallocate
-        wasm_instance.exports.deallocate.call(input_pointer, image_length)
-        wasm_instance.exports.deallocate.call(output_pointer, size)
-
-        bytes
+        t.join
+        t.value
       end
 
       def self.resize_and_pad(file_bytes:, width:, height:, size:, quality: 80)
+        GC.disable
         bytes = resize_and_pad_with_header(file_bytes: file_bytes,
                                            width: width,
                                            height: height,
                                            size: size + 4,
                                            quality: quality)
+        GC.enable
+        len = bytes[..3].pack("cccc").unpack("N*")[0]
+        if len == 0
+          raise "Error processing the image."
+        end
 
         # The first 4 bytes are a header until the image. The actual image probably ends well before
         # the whole buffer, but we keep the junk data on the end to make all the images the same size
