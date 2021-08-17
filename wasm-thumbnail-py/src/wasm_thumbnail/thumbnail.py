@@ -7,13 +7,17 @@ import struct
 from wasmer import engine, Store, Module, Instance, ImportObject, Function, FunctionType, Type
 from wasmer_compiler_cranelift import Compiler
 
-def decode_padded_image(data):
-    """Extract a payload from its padding by reading its length header."""
+def get_unpadded_length(data):
+    """Get the unpadded length from the header."""
     data_length_without_header = len(data) - 4
     if data_length_without_header < 0:
         raise ValueError('Data must be at least 4 bytes long', len(data))
 
-    payload_length = struct.unpack('!L', data[0:4])[0]
+    return struct.unpack('!L', data[0:4])[0]
+
+def decode_padded_image(data):
+    """Extract a payload from its padding by reading its length header."""
+    payload_length = get_payload_length(data)
 
     if data_length_without_header < payload_length:
         raise ValueError('Payload is shorter than the expected length',
@@ -37,6 +41,10 @@ def resize_and_pad_image(image_bytes, width, height, size, quality = 80):
     memory = instance.exports.memory.uint8_view(output_pointer)
     out_bytes = bytes(memory[:size])
     instance.exports.deallocate(output_pointer, size)
+
+    unpadded_length = get_unpadded_length(out_bytes)
+    if unpadded_length == 0:
+        raise RuntimeError('Image resizing failed')
 
     return out_bytes
 
