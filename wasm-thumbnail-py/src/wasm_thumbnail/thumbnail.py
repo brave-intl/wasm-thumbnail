@@ -17,7 +17,7 @@ def get_unpadded_length(data):
 
 def decode_padded_image(data):
     """Extract a payload from its padding by reading its length header."""
-    payload_length = get_payload_length(data)
+    payload_length = get_unpadded_length(data)
 
     if data_length_without_header < payload_length:
         raise ValueError('Payload is shorter than the expected length',
