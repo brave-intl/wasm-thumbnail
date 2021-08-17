@@ -66,11 +66,13 @@ module Wasm
       end
 
       def self.resize_and_pad(file_bytes:, width:, height:, size:, quality: 80)
+        GC.disable
         bytes = resize_and_pad_with_header(file_bytes: file_bytes,
                                            width: width,
                                            height: height,
                                            size: size + 4,
                                            quality: quality)
+        GC.enable
         len = bytes[..3].pack("cccc").unpack("N*")[0]
         if len == 0
           raise "Error processing the image."
