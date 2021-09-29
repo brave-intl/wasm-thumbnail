@@ -8,5 +8,8 @@ edition = "2018"
 [lib]
 crate-type = ["rlib", "cdylib"]
 
+[features]
+wasm-bindgen = []
+
 [dependencies]
 image = { version = "0.23.10", default_features = false, features = ["gif", "jpeg", "png", "webp"] }

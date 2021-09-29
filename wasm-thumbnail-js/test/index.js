@@ -12,7 +12,7 @@ const [, , infile, outfile] = process.argv;
 const buffer = fs.readFileSync(infile);
 
 console.log("converting...");
-const result = resize_and_pad(buffer, 920, 750, 500000);
+const result = resize_and_pad(buffer, 920, 750, 500000, 100);
 console.log(result);
 
 fs.writeFileSync(outfile, result);

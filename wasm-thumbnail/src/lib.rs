@@ -9,13 +9,16 @@ use image::GenericImage;
 use image::GenericImageView;
 use image::ImageOutputFormat;
 
+#[cfg(not(feature = "wasm-bindgen"))]
 mod hook;
+#[cfg(not(feature = "wasm-bindgen"))]
 use hook::register_panic_hook;
 
 /// Resize the input image specified by pointer and length to nwidth by nheight,
 /// returns a pointer to nsize bytes that containing a u32 length followed
 /// by the thumbnail bytes and padding
 #[no_mangle]
+#[cfg(not(feature = "wasm-bindgen"))]
 pub extern "C" fn resize_and_pad(
     pointer: *mut u8,
     length: usize,
