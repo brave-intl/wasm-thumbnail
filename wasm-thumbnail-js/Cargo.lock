@@ -285,12 +285,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0237232789cf037d5480773fe568aac745bfe2afbc11a863e97901780a6b47cc"
 
 [[package]]
+name = "wasm-thumbnail"
+version = "0.1.0"
+dependencies = [
+ "image",
+]
+
+[[package]]
 name = "wasm-thumbnail-js"
 version = "0.1.0"
 dependencies = [
  "console_error_panic_hook",
- "image",
  "wasm-bindgen",
+ "wasm-thumbnail",
 ]
 
 [[package]]
