@@ -5,9 +5,11 @@
 .Trashes
 .AppleDouble
 .LSOverride
+.idea
 
 # Project specific ignores
 target
 __pycache__
 *.pyc
 node_modules
+*.wasm

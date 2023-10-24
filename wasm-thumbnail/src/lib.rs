@@ -10,9 +10,9 @@ use image::GenericImageView;
 use image::ImageOutputFormat;
 
 #[cfg(not(feature = "wasm-bindgen"))]
-mod hook;
-#[cfg(not(feature = "wasm-bindgen"))]
-use hook::register_panic_hook;
+// mod hook;
+// #[cfg(not(feature = "wasm-bindgen"))]
+// use hook::register_panic_hook;
 
 /// Resize the input image specified by pointer and length to nwidth by nheight,
 /// returns a pointer to nsize bytes that containing a u32 length followed
@@ -27,7 +27,7 @@ pub extern "C" fn resize_and_pad(
     nsize: usize,
     nquality: u8,
 ) -> *const u8 {
-    register_panic_hook();
+    // register_panic_hook();
 
     let slice: &[u8] = unsafe { std::slice::from_raw_parts(pointer, length) };
 
