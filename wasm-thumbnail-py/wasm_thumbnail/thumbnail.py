@@ -28,7 +28,7 @@ def decode_padded_image(data):
 def resize_and_pad_image(image_bytes, width, height, size, quality = 80):
     """Resize an image and pad to fit size, output is prefixed by image length without padding.
     Throws an error if the resized image does not fit in size or is not a supported format"""
-    instance = Instance(module, import_object)
+    instance = Instance(module)
 
     image_length = len(image_bytes)
     input_pointer = instance.exports.allocate(image_length)
@@ -57,10 +57,10 @@ def register_panic(msg_ptr: int, msg_len: int, file_ptr: int, file_len: int, lin
 wasm = resources.open_binary('wasm_thumbnail.data', "wasm_thumbnail.wasm")
 store = Store(engine.JIT(Compiler))
 module = Module(store, wasm.read())
-import_object = ImportObject()
-import_object.register(
-    "env",
-    {
-        "register_panic": Function(store, register_panic)
-    }
-)
+# import_object = ImportObject()
+# import_object.register(
+#     "env",
+#     {
+#         "register_panic": Function(store, register_panic)
+#     }
+# )
