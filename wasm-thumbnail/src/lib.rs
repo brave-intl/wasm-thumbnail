@@ -32,11 +32,21 @@ pub extern "C" fn resize_and_pad(
     let slice: &[u8] = unsafe { std::slice::from_raw_parts(pointer, length) };
 
     let mut out: Vec<u8> = Vec::with_capacity(nsize);
-    // Reserve space at the start for length header
-    out.extend_from_slice(&[0, 0, 0, 0]);
 
-    if let Ok(thumbnail_len) = _resize_and_pad(slice, &mut out, nwidth, nheight, nsize, nquality) {
-        out.splice(..4, thumbnail_len.to_be_bytes().iter().cloned());
+
+
+    let mut mquality = nquality;
+
+    while mquality >= 15 {
+        // Reserve space at the start for length header
+        out.extend_from_slice(&[0, 0, 0, 0]);
+        
+        if let Ok(thumbnail_len) = _resize_and_pad(slice, &mut out, nwidth, nheight, nsize, mquality) {
+            out.splice(..4, thumbnail_len.to_be_bytes().iter().cloned());
+            break;
+        }     
+
+        mquality -= 5;
     }
 
     out.resize(nsize, 0);
