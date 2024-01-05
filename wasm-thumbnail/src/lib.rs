@@ -44,7 +44,7 @@ pub extern "C" fn resize_and_pad(
             break;
         }     
 
-        mquality -= 5;
+        mquality -= 10;
     }
 
     out.resize(nsize, 0);
