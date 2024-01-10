@@ -34,18 +34,33 @@ pub extern "C" fn resize_and_pad(
     let slice: &[u8] = unsafe { std::slice::from_raw_parts(pointer, length) };
 
     let mut out: Cursor<Vec<u8>> = Cursor::new(Vec::with_capacity(nsize));
-    
     // Reserve space at the start for length header
-    out.write_all(&[0,0,0,0]);
+    out.write_all(&[0,0,0,0]);    
 
-    match _resize_and_pad(slice, &mut out, nwidth, nheight, nsize, nquality) {
-        Ok(thumbnail_len) => {
-            out.get_mut().splice(..4, thumbnail_len.to_be_bytes().iter().cloned());
-        }
-        // Will produce RuntimeError: out of bounds memory access in the wasm caller, need a better error mechanism
-        _ => return &0,
+    let mut mquality = nquality;
 
+    loop {
+        match _resize_and_pad(slice, &mut out, nwidth, nheight, nsize, mquality) {
+            Ok(thumbnail_len) => {
+                out.get_mut().splice(..4, thumbnail_len.to_be_bytes().iter().cloned());
+                break;
+            }
+            _ => {
+                mquality -= 10;
+                
+                // Reallocate the cursor since the previous attempt to write an image has failed
+                out = Cursor::new(Vec::with_capacity(nsize));
+                // Reserve space at the start for length header
+                out.write_all(&[0,0,0,0]);
+
+                if mquality <= 15 {
+                    panic!("Image too large")
+                }
+            },
+    
+        }  
     }
+
     out.get_mut().resize(nsize, 0);
 
     let pointer = out.get_mut().as_mut_ptr();
