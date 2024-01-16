@@ -1,4 +1,4 @@
-/// Function imported into WASM for reporting panic details
+// Function imported into WASM for reporting panic details
 extern "C" {
     fn register_panic(
         msg_ptr: *const u8,

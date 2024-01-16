@@ -1,4 +1,5 @@
 use std::error::Error;
+use std::io::Cursor;
 use std::mem;
 use std::os::raw::c_void;
 
@@ -6,7 +7,6 @@ use image;
 use image::imageops::FilterType;
 use image::DynamicImage;
 use image::GenericImage;
-use image::GenericImageView;
 use image::ImageOutputFormat;
 
 #[cfg(not(feature = "wasm-bindgen"))]
@@ -27,28 +27,35 @@ pub extern "C" fn resize_and_pad(
     nsize: usize,
     nquality: u8,
 ) -> *const u8 {
+    use std::io::Write;
+
     register_panic_hook();
 
     let slice: &[u8] = unsafe { std::slice::from_raw_parts(pointer, length) };
 
-    let mut out: Vec<u8> = Vec::with_capacity(nsize);
+    let mut out: Cursor<Vec<u8>> = Cursor::new(Vec::with_capacity(nsize));
     // Reserve space at the start for length header
-    out.extend_from_slice(&[0, 0, 0, 0]);
+    let _ = out.write_all(&[0,0,0,0]);    
 
-    if let Ok(thumbnail_len) = _resize_and_pad(slice, &mut out, nwidth, nheight, nsize, nquality) {
-        out.splice(..4, thumbnail_len.to_be_bytes().iter().cloned());
+    match _resize_and_pad(slice, &mut out, nwidth, nheight, nsize, nquality) {
+        Ok(thumbnail_len) => {
+            out.get_mut().splice(..4, thumbnail_len.to_be_bytes().iter().cloned());
+        }
+        _ => {
+            panic!("Image too large")
+        }
     }
 
-    out.resize(nsize, 0);
+    out.get_mut().resize(nsize, 0);
 
-    let pointer = out.as_mut_ptr();
+    let pointer = out.get_mut().as_mut_ptr();
     mem::forget(out);
     pointer
 }
 
 pub fn _resize_and_pad(
     slice: &[u8],
-    out: &mut Vec<u8>,
+    out: &mut Cursor<Vec<u8>>,
     nwidth: u32,
     nheight: u32,
     nsize: usize,
@@ -65,11 +72,11 @@ pub fn _resize_and_pad(
 
     result.write_to(out, ImageOutputFormat::Jpeg(nquality))?;
 
-    if out.len() > nsize {
+    if out.get_ref().len() > nsize {
         return Err("size is too large".into());
     }
 
-    Ok(out.len() as u32 - 4)
+    Ok(out.get_ref().len() as u32 - 4)
 }
 
 /// Allocate a new buffer in the wasm memory space
