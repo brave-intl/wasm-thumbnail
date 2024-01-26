@@ -28,19 +28,39 @@ def decode_padded_image(data):
 def resize_and_pad_image(image_bytes, width, height, size, quality = 80):
     """Resize an image and pad to fit size, output is prefixed by image length without padding.
     Throws an error if the resized image does not fit in size or is not a supported format"""
-    instance = Instance(module, import_object)
 
+    wasm = resources.open_binary('wasm_thumbnail.data', "wasm_thumbnail.wasm")
+    store = Store(engine.JIT(Compiler))
+    module = Module(store, wasm.read())
+    import_object = ImportObject()
+    import_object.register(
+        "env",
+        {
+            "register_panic": Function(store, register_panic)
+        }
+    )
+    instance = Instance(module, import_object)
     image_length = len(image_bytes)
     input_pointer = instance.exports.allocate(image_length)
     memory = instance.exports.memory.uint8_view(input_pointer)
     memory[0:image_length] = image_bytes
 
-    output_pointer = instance.exports.resize_and_pad(input_pointer, image_length, width, height, size, quality)
-    instance.exports.deallocate(input_pointer, image_length)
+    try:
+        output_pointer = instance.exports.resize_and_pad(
+            input_pointer, image_length, width, height, size, quality
+        )
+        instance.exports.deallocate(input_pointer, image_length)
 
-    memory = instance.exports.memory.uint8_view(output_pointer)
-    out_bytes = bytes(memory[:size])
-    instance.exports.deallocate(output_pointer, size)
+        memory = instance.exports.memory.uint8_view(output_pointer)
+        out_bytes = bytes(memory[:size])
+
+        instance.exports.deallocate(output_pointer, size)
+
+    except RuntimeError:
+        print(
+            f"resize_and_pad() hit a RuntimeError "
+            f"(length={image_length}, width={width}, height={height}, size={size}):"
+        )
 
     unpadded_length = get_unpadded_length(out_bytes)
     if unpadded_length == 0:

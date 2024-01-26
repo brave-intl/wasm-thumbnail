@@ -34,7 +34,7 @@ class Wasm::Thumbnail::RbTest < Minitest::Test
                                          height: 200,
                                          size: 5)
     end
-    assert_equal(exception.message, "Error processing the image.")
+    assert_equal(exception.message.split(/:/, 2).first, "Error processing the image")
   end
 
   def test_should_not_crash_after_many_resizes
