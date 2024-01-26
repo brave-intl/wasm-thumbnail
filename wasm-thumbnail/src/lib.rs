@@ -34,12 +34,12 @@ pub extern "C" fn resize_and_pad(
     let slice: &[u8] = unsafe { std::slice::from_raw_parts(pointer, length) };
 
     let mut out: Cursor<Vec<u8>> = Cursor::new(Vec::with_capacity(nsize));
-    // Reserve space at the start for length header
-    let _ = out.write_all(&[0,0,0,0]);    
+    // Add additional space at the start for the length header
+    out.get_mut().extend_from_slice(&[0,0,0,0]);
 
     match _resize_and_pad(slice, &mut out, nwidth, nheight, nsize, nquality) {
         Ok(thumbnail_len) => {
-            out.get_mut().splice(..4, thumbnail_len.to_be_bytes().iter().cloned());
+            out.get_mut()[0..4].copy_from_slice(&thumbnail_len.to_be_bytes());
         }
         _ => {
             panic!("Image too large")
