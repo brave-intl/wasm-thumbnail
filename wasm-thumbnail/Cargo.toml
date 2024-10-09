@@ -12,4 +12,4 @@ crate-type = ["rlib", "cdylib"]
 wasm-bindgen = []
 
 [dependencies]
-image = { default_features = false, features = ["gif", "jpeg", "png", "webp", "bmp", "ico"] } # leaving "avif-decoder" out of features until it can compile to wasm
+image = { version = "0.24.9", default_features = false, features = ["gif", "jpeg", "png", "webp", "bmp", "ico"] } # leaving "avif-decoder" out of features until it can compile to wasm
